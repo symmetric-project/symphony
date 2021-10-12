@@ -19,3 +19,6 @@ dumps
 
 # Air temporary files
 tmp
+
+# Environmental files
+.env

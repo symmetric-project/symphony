@@ -6,7 +6,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/symmetric-project/node-backend/graph/model"
+	"github.com/symmetric-project/symphony/db"
+	"github.com/symmetric-project/symphony/model"
 )
 
 type SubmissionRow struct {
@@ -43,7 +44,11 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		} else {
-			log.Println(row)
+			post := NewPost(row)
+			err = db.AddPost(post)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 		lines++
 		if lines > 100 {

@@ -59,6 +59,21 @@ func init() {
 	}
 }
 
+func GetUserExists(userId string) (bool, error) {
+	var exists bool
+	var user model.User
+	builder := SQ.Select(`"user"`).Where("id = $1", userId).Suffix("RETURNING id")
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return exists, err
+	}
+	err = pgxscan.Get(context.Background(), DB, &user, query, args...)
+	if user.ID == userId {
+		exists = true
+	}
+	return exists, err
+}
+
 func AddUser(user model.User) error {
 	builder := SQ.Insert(`"user"`).Columns(`"name"`).Values(user.Name)
 	query, args, err := builder.ToSql()
