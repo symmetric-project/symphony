@@ -4,8 +4,10 @@ import (
 	"context"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/symmetric-project/symphony/env"
+	"github.com/symmetric-project/symphony/model"
 	"github.com/symmetric-project/symphony/utils"
 )
 
@@ -57,12 +59,36 @@ func init() {
 	}
 }
 
-func AddSubscription(subscription Subscription) error {
-	builder := SQ.Insert(`"subscription"`).Columns(`"endpoint"`, `"auth"`, `"p256dh"`).Values(subscription.Endpoint, subscription.Auth, subscription.P256dh).Suffix(`RETURNING *`)
+func AddUser(user model.User) error {
+	builder := SQ.Insert(`"user"`).Columns(`"name"`).Values(user.Name)
 	query, args, err := builder.ToSql()
 	if err != nil {
 		return err
 	}
-	_, err = DB.Exec(context.Background(), query, args...)
+	err = pgxscan.Get(context.Background(), DB, &user, query, args...)
+	return err
+}
+
+func AddPost(post model.Post) error {
+	id := utils.NewOctid()
+	slug := utils.Slugify(post.Title)
+	creationTimestamp := utils.CurrentTimestamp()
+
+	var link *string
+	var deltaOps *string
+
+	if post.Link != nil {
+		link = post.Link
+	} else {
+		deltaOps = post.DeltaOps
+	}
+
+	builder := SQ.Insert(`post`).Columns(`id`, `title`, `link`, `delta_ops`, `node_name`, `slug`, `creation_timestamp`, `author_id`).Values(id, post.Title, link, deltaOps, post.NodeName, slug, creationTimestamp, "asddas")
+	query, args, err := builder.ToSql()
+
+	if err != nil {
+		return err
+	}
+	err = pgxscan.Get(context.Background(), DB, &post, query, args...)
 	return err
 }
