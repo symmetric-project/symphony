@@ -18,9 +18,9 @@ type SubmissionRow struct {
 	Selftext   string `json:"selftext"`
 }
 
-func NewPost(row SubmissionRow) model.Post {
+func NewPost(submissionRow SubmissionRow) model.Post {
 	return model.Post{
-		Title: row.Title,
+		Title: submissionRow.Title,
 	}
 }
 
@@ -39,16 +39,33 @@ func main() {
 
 	lines := 0
 	for sc.Scan() {
-		var row SubmissionRow
-		err := json.Unmarshal(sc.Bytes(), &row)
+		var subm SubmissionRow
+		err := json.Unmarshal(sc.Bytes(), &subm)
 		if err != nil {
 			log.Println(err)
-		} else {
-			post := NewPost(row)
-			err = db.AddPost(post)
+			continue
+		}
+		userExists, err := db.GetUserExists("BeigeWorry")
+		if err != nil {
+			log.Println(err)
+		}
+		var user model.User
+		if !userExists {
+			user, err = db.AddUser(model.User{Name: subm.Author})
 			if err != nil {
 				log.Println(err)
 			}
+		} else {
+			user, err = db.GetUserByName(subm.Author)
+			if err != nil {
+				log.Println(err)
+			}
+		}
+		post := NewPost(subm)
+		post.AuthorID = user.ID
+		err = db.AddPost(post)
+		if err != nil {
+			log.Println(err)
 		}
 		lines++
 		if lines > 100 {
