@@ -1,0 +1,26 @@
+{
+  "name": "symphony",
+  "version": "0.0.1",
+  "description": "Markdown to DraftJS raw state converter",
+  "main": "draft.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/symmetric-project/symphony.git"
+  },
+  "keywords": [
+    "draftjs",
+    "markdown"
+  ],
+  "author": "Dan Clipca",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/symmetric-project/symphony/issues"
+  },
+  "homepage": "https://github.com/symmetric-project/symphony#readme",
+  "dependencies": {
+    "markdown-draft-js": "^2.4.0"
+  }
+}

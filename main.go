@@ -3,11 +3,15 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/symmetric-project/symphony/db"
 	"github.com/symmetric-project/symphony/model"
+	"github.com/symmetric-project/symphony/utils"
 )
 
 type SubmissionRow struct {
@@ -24,10 +28,22 @@ func NewPost(submissionRow SubmissionRow) model.Post {
 	}
 }
 
+func ConvertMarkdownToDraftJSRawState() {
+	parts := strings.Fields("node draft.js")
+	cmd := exec.Command(parts[0], parts[1:]...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println(string(output))
+}
+
 func main() {
+	ConvertMarkdownToDraftJSRawState()
+	return
 	file, err := os.Open("./dumps/RS_2021-06")
 	if err != nil {
-		log.Fatal(err)
+		utils.StacktraceErrorAndExit(err)
 	}
 	defer file.Close()
 
@@ -42,32 +58,38 @@ func main() {
 		var subm SubmissionRow
 		err := json.Unmarshal(sc.Bytes(), &subm)
 		if err != nil {
-			log.Println(err)
+			utils.StacktraceError(err)
 			continue
 		}
-		userExists, err := db.GetUserExists("BeigeWorry")
+		userExists, err := db.GetUserExists(subm.Author)
 		if err != nil {
-			log.Println(err)
+			utils.StacktraceError(err)
 		}
+
 		var user model.User
 		if !userExists {
 			user, err = db.AddUser(model.User{Name: subm.Author})
 			if err != nil {
-				log.Println(err)
-			}
-		} else {
-			user, err = db.GetUserByName(subm.Author)
-			if err != nil {
-				log.Println(err)
+				utils.StacktraceErrorAndExit(err)
+			} else {
+				utils.LogSuccess("user created " + fmt.Sprint(user))
 			}
 		}
+		user, err = db.GetUserByName(subm.Author)
+		if err != nil {
+			utils.StacktraceErrorAndExit(err)
+		}
+
+		/* utils.LogWarning(user) */
+
 		post := NewPost(subm)
 		post.AuthorID = user.ID
 		err = db.AddPost(post)
 		if err != nil {
-			log.Println(err)
+			utils.StacktraceError(err)
 		}
 		lines++
+		log.Println(lines)
 		if lines > 100 {
 			break
 		}

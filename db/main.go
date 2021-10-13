@@ -67,13 +67,13 @@ func GetUserExists(userName string) (bool, error) {
 
 func GetUserByName(userName string) (model.User, error) {
 	var user model.User
-	err := pgxscan.Get(context.Background(), DB, &user, `SELECT from "user" WHERE "name" = $1 RETURNING *)`, userName)
+	err := pgxscan.Get(context.Background(), DB, &user, `SELECT * from "user" WHERE "name" = $1`, userName)
 	return user, err
 }
 
 func AddUser(newUser model.User) (model.User, error) {
 	var user model.User
-	builder := SQ.Insert(`"user"`).Columns(`"name"`).Values(newUser.Name)
+	builder := SQ.Insert(`"user"`).Columns(`"name"`).Values(newUser.Name).Suffix("RETURNING *")
 	query, args, err := builder.ToSql()
 	if err != nil {
 		return user, err
@@ -96,12 +96,12 @@ func AddPost(post model.Post) error {
 		deltaOps = post.DeltaOps
 	}
 
-	builder := SQ.Insert(`post`).Columns(`id`, `title`, `link`, `delta_ops`, `node_name`, `slug`, `creation_timestamp`, `author_id`).Values(id, post.Title, link, deltaOps, post.NodeName, slug, creationTimestamp, id)
+	builder := SQ.Insert(`post`).Columns(`id`, `title`, `link`, `raw_state`, `node_name`, `slug`, `creation_timestamp`, `author_id`).Values(id, post.Title, link, deltaOps, post.NodeName, slug, creationTimestamp, post.AuthorID)
 	query, args, err := builder.ToSql()
 
 	if err != nil {
 		return err
 	}
-	err = pgxscan.Get(context.Background(), DB, &post, query, args...)
+	_, err = DB.Exec(context.Background(), query, args...)
 	return err
 }
