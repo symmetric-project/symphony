@@ -1,2 +1,2 @@
 # symphony
-Pushshift to SQL converter.
+Pushshift to Symmetric data parser.
