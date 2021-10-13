@@ -29,7 +29,7 @@ func NewPost(submissionRow SubmissionRow) model.Post {
 }
 
 func ConvertMarkdownToDraftJSRawState() {
-	parts := strings.Fields("node draft.js")
+	parts := strings.Fields(`node draft.js ## Heading level 2`)
 	cmd := exec.Command(parts[0], parts[1:]...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
