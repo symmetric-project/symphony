@@ -1,2 +1,2 @@
 # symphony
-Pushshift to Symmetric data parser.
+Pushshift.io to Symmetric post converter.
