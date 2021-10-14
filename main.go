@@ -22,33 +22,41 @@ type SubmissionRow struct {
 	Selftext   string `json:"selftext"`
 }
 
-func ConvertMarkdownToDraftState(mardown string) string {
+func ConvertMarkdownToDraftState(mardown string) (string, error) {
 	parts := strings.Fields(`node convert-markdown-to-draft-state.js ` + mardown)
 	cmd := exec.Command(parts[0], parts[1:]...)
 	output, err := cmd.CombinedOutput()
+	/* log.Println(string(output)) */
 	if err != nil {
-		utils.StacktraceErrorAndExit(err)
+		return "", err
 	}
-	return string(output)
+	return string(output), nil
 }
 
-func ConvertDraftStateToRawState(draftState string) string {
+func ConvertDraftStateToRawState(draftState string) (string, error) {
 	parts := strings.Fields(`node convert-draft-state-to-raw-state.js ` + draftState)
 	cmd := exec.Command(parts[0], parts[1:]...)
 	output, err := cmd.CombinedOutput()
+	log.Println(string(output))
+	if err != nil {
+		return "", err
+	}
+	return string(output), err
+}
+
+func ConvertMarkdownToRawState(markdown string) (string, error) {
+	draftState, err := ConvertMarkdownToDraftState(markdown)
 	if err != nil {
 		utils.StacktraceErrorAndExit(err)
 	}
-	return string(output)
-}
-
-func ConvertMarkdownToRawState(markdown string) string {
-	draftState := ConvertMarkdownToDraftState(markdown)
 	return ConvertDraftStateToRawState(draftState)
 }
 
 func NewPost(submissionRow SubmissionRow) model.Post {
-	rawState := ConvertMarkdownToRawState(submissionRow.Selftext)
+	rawState, err := ConvertMarkdownToDraftState(submissionRow.Selftext)
+	if err != nil {
+		utils.StacktraceErrorAndExit(err)
+	}
 	return model.Post{
 		Title:    submissionRow.Title,
 		RawState: &rawState,
@@ -107,7 +115,7 @@ func main() {
 		}
 		lines++
 		log.Println(lines)
-		if lines > 100 {
+		if lines > 10000 {
 			break
 		}
 	}

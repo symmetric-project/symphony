@@ -71,6 +71,22 @@ func GetUserByName(userName string) (model.User, error) {
 	return user, err
 }
 
+func AddNode(newNode model.Node) (model.Node, error) {
+	var node model.Node
+	creationTimestamp := utils.CurrentTimestamp()
+	builder := SQ.Insert(`node`).Columns(`name`, `access`, `nsfw`, `creation_timestamp`, `creator_id`).Values(newNode.Name, newNode.Access, newNode.Nsfw, creationTimestamp, "claims.Id").Suffix(`RETURNING *`)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return node, err
+	}
+	err = pgxscan.Get(context.Background(), DB, &node, query, args...)
+	if err != nil {
+		return node, err
+	}
+	return node, err
+}
+
 func AddUser(newUser model.User) (model.User, error) {
 	var user model.User
 	builder := SQ.Insert(`"user"`).Columns(`"name"`).Values(newUser.Name).Suffix("RETURNING *")

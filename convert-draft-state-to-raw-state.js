@@ -1,6 +1,9 @@
-import { convertToRaw } from 'draft-js';
+import draftJS from 'draft-js';
 
 let draftState = process.argv.slice(2).join(" ");
-/* console.log('Draft state: ' + draftState); */
-let rawState = convertToRaw(draftState);
+let jsonDraftState = JSON.parse(draftState);
+let contentState = draftJS.ContentState.createFromBlockArray(jsonDraftState.blocks, jsonDraftState.entityMap)
+let editorState = draftJS.EditorState.createWithContent(contentState);
+
+let rawState = draftJS.convertToRaw(editorState.getCurrentContent());
 console.log(JSON.stringify(rawState));
