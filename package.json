@@ -2,7 +2,7 @@
   "name": "symphony",
   "version": "0.0.1",
   "description": "Pushshift.io to Symmetric post converter.",
-  "main": "converter.js",
+  "main": "convert-markdown-to-draft-state.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/symmetric-project/symphony#readme",
   "dependencies": {
+    "draft-js": "^0.11.7",
     "markdown-draft-js": "^2.4.0"
   },
   "type": "module"
