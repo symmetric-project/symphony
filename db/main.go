@@ -71,10 +71,16 @@ func GetUserByName(userName string) (model.User, error) {
 	return user, err
 }
 
+func GetNodeExists(nodeName string) (bool, error) {
+	var exists bool
+	err := pgxscan.Get(context.Background(), DB, &exists, `SELECT EXISTS(SELECT 1 from "node" WHERE "name" = $1)`, nodeName)
+	return exists, err
+}
+
 func AddNode(newNode model.Node) (model.Node, error) {
 	var node model.Node
 	creationTimestamp := utils.CurrentTimestamp()
-	builder := SQ.Insert(`node`).Columns(`name`, `access`, `nsfw`, `creation_timestamp`, `creator_id`).Values(newNode.Name, newNode.Access, newNode.Nsfw, creationTimestamp, "claims.Id").Suffix(`RETURNING *`)
+	builder := SQ.Insert(`node`).Columns(`name`, `access`, `nsfw`, `creation_timestamp`, `creator_id`).Values(newNode.Name, newNode.Access, newNode.Nsfw, creationTimestamp, "8d05b23f-daff-4cc2-9bac-743c38e2b88e").Suffix(`RETURNING *`)
 
 	query, args, err := builder.ToSql()
 	if err != nil {
