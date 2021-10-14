@@ -28,19 +28,25 @@ func NewPost(submissionRow SubmissionRow) model.Post {
 	}
 }
 
-func ConvertMarkdownToDraftJSRawState() {
-	parts := strings.Fields(`node draft.js ## Heading level 2`)
+func ConvertMarkdownToDraftJSRawState(mardown string) string {
+	parts := strings.Fields(`node converter.js ` + mardown)
 	cmd := exec.Command(parts[0], parts[1:]...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Println(err)
+		utils.StacktraceErrorAndExit(err)
 	}
-	log.Println(string(output))
+	return string(output)
+
+	/* var draftState DraftState
+	err = json.Unmarshal(output, &draftState)
+	if err != nil {
+		utils.StacktraceErrorAndExit(err)
+	} */
 }
 
 func main() {
-	ConvertMarkdownToDraftJSRawState()
-	return
+	/* draftState := ConvertMarkdownToDraftJSRawState("## Heading level 2")
+	log.Println(draftState) */
 	file, err := os.Open("./dumps/RS_2021-06")
 	if err != nil {
 		utils.StacktraceErrorAndExit(err)

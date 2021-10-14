@@ -87,16 +87,7 @@ func AddPost(post model.Post) error {
 	slug := utils.Slugify(post.Title)
 	creationTimestamp := utils.CurrentTimestamp()
 
-	var link *string
-	var deltaOps *string
-
-	if post.Link != nil {
-		link = post.Link
-	} else {
-		deltaOps = post.DeltaOps
-	}
-
-	builder := SQ.Insert(`post`).Columns(`id`, `title`, `link`, `raw_state`, `node_name`, `slug`, `creation_timestamp`, `author_id`).Values(id, post.Title, link, deltaOps, post.NodeName, slug, creationTimestamp, post.AuthorID)
+	builder := SQ.Insert(`post`).Columns(`id`, `title`, `link`, `raw_state`, `node_name`, `slug`, `creation_timestamp`, `author_id`).Values(id, post.Title, post.Link, post.RawState, post.NodeName, slug, creationTimestamp, post.AuthorID)
 	query, args, err := builder.ToSql()
 
 	if err != nil {
