@@ -64,7 +64,9 @@ type Post struct {
 	CreationTimestamp int     `json:"creationTimestamp"`
 	AuthorID          string  `json:"authorId"`
 	Author            *User   `json:"author"`
-	Karma             int     `json:"karma"`
+	Bases             int     `json:"bases"`
+	ThumbnaillURL     *string `json:"thumbnaillUrl"`
+	ImageURL          *string `json:"imageUrl"`
 }
 
 type User struct {

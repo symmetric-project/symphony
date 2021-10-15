@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"log"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/pgxscan"
@@ -80,7 +81,7 @@ func GetNodeExists(nodeName string) (bool, error) {
 func AddNode(newNode model.Node) (model.Node, error) {
 	var node model.Node
 	creationTimestamp := utils.CurrentTimestamp()
-	builder := SQ.Insert(`node`).Columns(`name`, `access`, `nsfw`, `creation_timestamp`, `creator_id`).Values(newNode.Name, newNode.Access, newNode.Nsfw, creationTimestamp, "8d05b23f-daff-4cc2-9bac-743c38e2b88e").Suffix(`RETURNING *`)
+	builder := SQ.Insert(`node`).Columns(`name`, `access`, `nsfw`, `creation_timestamp`, `creator_id`).Values(newNode.Name, newNode.Access, newNode.Nsfw, creationTimestamp, node.CreatorID).Suffix(`RETURNING *`)
 
 	query, args, err := builder.ToSql()
 	if err != nil {
@@ -107,11 +108,22 @@ func AddUser(newUser model.User) (model.User, error) {
 func AddPost(post model.Post) error {
 	id := utils.NewOctid()
 	slug := utils.Slugify(post.Title)
+	dashes := 0
+	for i, char := range slug {
+		if string(char) == "-" {
+			dashes++
+		}
+		if dashes > 5 {
+			slug = slug[0:i]
+			break
+		}
+	}
 	creationTimestamp := utils.CurrentTimestamp()
 
-	builder := SQ.Insert(`post`).Columns(`id`, `title`, `link`, `raw_state`, `node_name`, `slug`, `creation_timestamp`, `author_id`).Values(id, post.Title, post.Link, post.RawState, post.NodeName, slug, creationTimestamp, post.AuthorID)
+	builder := SQ.Insert(`post`).Columns(`id`, `title`, `link`, `raw_state`, `node_name`, `slug`, `creation_timestamp`, `author_id`, `thumbnail_url`, `image_url`, `bases`).Values(id, post.Title, post.Link, post.RawState, post.NodeName, slug, creationTimestamp, post.AuthorID, post.ThumbnaillURL, post.ImageURL, post.Bases)
 	query, args, err := builder.ToSql()
-
+	log.Println(query)
+	log.Println(args...)
 	if err != nil {
 		return err
 	}

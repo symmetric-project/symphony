@@ -1,6 +1,9 @@
 import { markdownToDraft } from 'markdown-draft-js';
-
 let markdown = process.argv.slice(2).join(" ");
-/* console.log('Markdown: ' + markdown); */
 let draftState = markdownToDraft(markdown);
-console.log(JSON.stringify(draftState));
+
+if (draftState.blocks.length === 1 && draftState.blocks[0].text === "") {
+} else {
+    let draftState = markdownToDraft(markdown);
+    console.log(JSON.stringify(draftState));
+}

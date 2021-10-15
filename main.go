@@ -15,25 +15,29 @@ import (
 )
 
 type SubmissionRow struct {
-	Author     string `json:"author"`
-	CreatedUTC int    `json:"created_utc"`
-	Title      string `json:"title"`
-	Subreddit  string `json:"subreddit"`
-	Selftext   string `json:"selftext"`
+	Author      string  `json:"author"`
+	CreatedUTC  int     `json:"created_utc"`
+	Score       int     `json:"score"`
+	Subreddit   string  `json:"subreddit"`
+	Selftext    string  `json:"selftext"`
+	Title       string  `json:"title"`
+	Thumbnail   string  `json:"thumbnail"`
+	UpvoteRatio float32 `json:"upvote_ratio"`
+	URL         string  `json:"url"`
 }
 
 func ConvertMarkdownToDraftState(mardown string) (string, error) {
 	parts := strings.Fields(`node convert-markdown-to-draft-state.js ` + mardown)
 	cmd := exec.Command(parts[0], parts[1:]...)
 	output, err := cmd.CombinedOutput()
-	/* log.Println(string(output)) */
+	log.Println(string(output))
 	if err != nil {
 		return "", err
 	}
 	return string(output), nil
 }
 
-func ConvertDraftStateToRawState(draftState string) (string, error) {
+/* func ConvertDraftStateToRawState(draftState string) (string, error) {
 	parts := strings.Fields(`node convert-draft-state-to-raw-state.js ` + draftState)
 	cmd := exec.Command(parts[0], parts[1:]...)
 	output, err := cmd.CombinedOutput()
@@ -42,32 +46,47 @@ func ConvertDraftStateToRawState(draftState string) (string, error) {
 		return "", err
 	}
 	return string(output), err
-}
+} */
 
-func ConvertMarkdownToRawState(markdown string) (string, error) {
+/* func ConvertMarkdownToRawState(markdown string) (*string, error) {
 	draftState, err := ConvertMarkdownToDraftState(markdown)
 	if err != nil {
 		utils.StacktraceErrorAndExit(err)
 	}
-	return ConvertDraftStateToRawState(draftState)
-}
+	rawState, err := ConvertDraftStateToRawState(draftState)
+	return &rawState, err
+} */
 
 func NewPost(subm SubmissionRow, user model.User) model.Post {
+	log.Println(user)
 	rawState, err := ConvertMarkdownToDraftState(subm.Selftext)
 	if err != nil {
 		utils.StacktraceErrorAndExit(err)
 	}
 	id := utils.NewOctid()
 	creationTimestamp := utils.CurrentTimestamp()
-	return model.Post{
+	post := model.Post{
 		ID:                id,
 		Title:             subm.Title,
-		RawState:          &rawState,
+		RawState:          nil,
 		NodeName:          subm.Subreddit,
 		Slug:              utils.Slugify(subm.Title),
 		CreationTimestamp: creationTimestamp,
 		AuthorID:          user.ID,
+		ThumbnaillURL:     nil,
+		ImageURL:          nil,
+		Bases:             subm.Score,
 	}
+	if len(rawState) > 0 {
+		post.RawState = &rawState
+	}
+	if strings.Contains(subm.Thumbnail, ".jpg") {
+		post.ThumbnaillURL = &subm.Thumbnail
+	}
+	if strings.Contains(subm.URL, ".jpg") {
+		post.ImageURL = &subm.URL
+	}
+	return post
 }
 
 func NewNode(subm SubmissionRow) model.Node {
@@ -115,6 +134,11 @@ func ParseSubreddit(subredditName string) {
 			} else {
 				utils.LogSuccess("New user created " + fmt.Sprint(user))
 			}
+		} else {
+			user, err = db.GetUserByName(subm.Author)
+			if err != nil {
+				utils.StacktraceErrorAndExit(err)
+			}
 		}
 
 		/* var node model.Node */
@@ -148,9 +172,9 @@ func ParseSubreddit(subredditName string) {
 		}
 		lines++
 		log.Println(lines)
-		/* if lines > 10000 {
+		if lines > 100 {
 			break
-		} */
+		}
 	}
 }
 
