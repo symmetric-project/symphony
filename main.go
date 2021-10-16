@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -30,7 +31,7 @@ func ConvertMarkdownToDraftState(mardown string) (string, error) {
 	parts := strings.Fields(`node convert-markdown-to-draft-state.js ` + mardown)
 	cmd := exec.Command(parts[0], parts[1:]...)
 	output, err := cmd.CombinedOutput()
-	log.Println(string(output))
+	/* log.Println(string(output)) */
 	if err != nil {
 		return "", err
 	}
@@ -57,20 +58,21 @@ func ConvertMarkdownToDraftState(mardown string) (string, error) {
 	return &rawState, err
 } */
 
-func NewPost(subm SubmissionRow, user model.User) model.Post {
-	log.Println(user)
+func NewPost(subm SubmissionRow, user model.User) (model.Post, error) {
 	rawState, err := ConvertMarkdownToDraftState(subm.Selftext)
 	if err != nil {
 		utils.StacktraceErrorAndExit(err)
 	}
 	id := utils.NewOctid()
 	creationTimestamp := utils.CurrentTimestamp()
+	slug := utils.Slugify(subm.Title)
+
 	post := model.Post{
 		ID:                id,
 		Title:             subm.Title,
 		RawState:          nil,
 		NodeName:          subm.Subreddit,
-		Slug:              utils.Slugify(subm.Title),
+		Slug:              slug,
 		CreationTimestamp: creationTimestamp,
 		AuthorID:          user.ID,
 		ThumbnaillURL:     nil,
@@ -80,13 +82,22 @@ func NewPost(subm SubmissionRow, user model.User) model.Post {
 	if len(rawState) > 0 {
 		post.RawState = &rawState
 	}
+
 	if strings.Contains(subm.Thumbnail, ".jpg") {
+		healthy := utils.GetUrlHealthy(subm.Thumbnail)
+		if !healthy {
+			return post, errors.New("thumbnail url is not healthy")
+		}
 		post.ThumbnaillURL = &subm.Thumbnail
 	}
 	if strings.Contains(subm.URL, ".jpg") {
+		healthy := utils.GetUrlHealthy(subm.URL)
+		if !healthy {
+			return post, errors.New("image url is not healthy")
+		}
 		post.ImageURL = &subm.URL
 	}
-	return post
+	return post, nil
 }
 
 func NewNode(subm SubmissionRow) model.Node {
@@ -163,18 +174,20 @@ func ParseSubreddit(subredditName string) {
 			}
 		}
 
-		/* utils.LogWarning(user) */
-
-		post := NewPost(subm, user)
-		err = db.AddPost(post)
+		post, err := NewPost(subm, user)
 		if err != nil {
 			utils.StacktraceError(err)
+			continue
+		}
+		err = db.AddPost(post)
+		if err != nil {
+			utils.StacktraceErrorAndExit(err)
 		}
 		lines++
 		log.Println(lines)
-		if lines > 100 {
+		/* if lines > 1000 {
 			break
-		}
+		} */
 	}
 }
 
